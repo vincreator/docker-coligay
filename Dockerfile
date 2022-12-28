@@ -45,7 +45,7 @@ RUN apt-get update && apt-get install -y \
     libssl1.1 \
     libtiff5 \
     libfreetype6 \
-    libjpeg62-turbo \
+    libjpeg-turbo8 \
     liblcms2-2 \
     libwebp6 \
     libopenjp2-7 \
@@ -55,7 +55,8 @@ RUN apt-get update && apt-get install -y \
     libxml2 \
     libssh2-1 \
     ca-certificates \
-    ffmpeg
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install aria2 with SFTP and GZIP support
 RUN apt-get update && apt-get install -y \
