@@ -82,7 +82,7 @@ RUN apt-get update && apt-get install -y \
 RUN adduser -D caligo
 
 # Copy Go programs
-COPY --from=go-build /usr/local/go/bin/corrupter /usr/local/bin
+COPY --from=go-build /go/bin/corrupter /usr/local/bin
 
 # Copy Python venv
 ENV PATH="/opt/venv/bin:$PATH"
