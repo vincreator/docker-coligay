@@ -1,20 +1,6 @@
 FROM ubuntu:20.04
 
-# Set time zone to your local time zone
-ENV TZ=Asia/Jakarta
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-
-# Set debconf to use noninteractive frontend
-ENV DEBIAN_FRONTEND noninteractive
-
-# Install Git and other dependencies needed to build Go programs
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    git \
-    golang-go
-
-# Build Python package and dependencies
-FROM python:3.9-slim-buster AS python-build
+# Install Golang and dependencies
 RUN apt-get update && apt-get install -y \
     git \
     libffi-dev \
@@ -28,33 +14,24 @@ RUN apt-get update && apt-get install -y \
     libfreetype6-dev \
     liblcms2-dev \
     libopenjp2-7-dev \
-    libpng-dev
-RUN mkdir -p /opt/venv
-WORKDIR /opt/venv
-RUN python3 -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
+    libpng-dev \
+    && rm -rf
+/var/lib/apt/lists/*
 
-RUN mkdir -p /src
-WORKDIR /src
+RUN apt-get update && apt-get install -y \
+    golang-go \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install bot package and dependencies
-COPY . .
-RUN pip install --upgrade pip
-RUN pip install wheel
-RUN pip install aiohttp[speedups]
-RUN pip install uvloop
+# Install Python packages using pip
+RUN python3 -m pip install --upgrade pip
+RUN python3 -m pip install wheel aiohttp uvloop
 
-# Package everything
-FROM python:3.9-slim-buster AS final
-# Update system first
-RUN apt-get update
-
-# Install optional native tools (for full functionality)
+# Install curl, neofetch, and libnss3
 RUN apt-get update && apt-get install -y \
     curl \
     neofetch \
-    git \
-    libnss3
+    libnss3 \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install native dependencies
 RUN apt-get update && apt-get install -y \
@@ -72,35 +49,27 @@ RUN apt-get update && apt-get install -y \
     libxml2 \
     libssh2-1 \
     ca-certificates \
-    ffmpeg
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy Python venv
-ENV PATH="/opt/venv/bin:$PATH"
-COPY --from=python-build /opt/venv /opt/venv
+# Install aria2 with SFTP and GZIP support
+RUN apt-get update && apt-get install -y \
+    aria2 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Tell system that we run on container
-ENV CONTAINER="True"
+RUN aria2c https://github.com/tatsuhiro-t/nghttp2/releases/download/v1.41.0/nghttp2-1.41.0.tar.gz -o nghttp2.tar.gz
+RUN tar -zxvf nghttp2.tar.gz
+RUN cd nghttp2-1.41.0 && ./configure && make && make install
 
-# Download aria with sftp and gzip support
-ARG ARIA2=aria2_1.36.0-1_amd64.deb
-RUN curl -LJO https://raw.githubusercontent.com/adekmaulana/docker/master/aria2/$ARIA2
-RUN apt-get update && apt-get install -y ./$ARIA2
+RUN aria2c https://github.com/libssh2/libssh2/releases/download/libssh2-1.9.0/libssh2-1.9.0.tar.gz -o libssh2.tar.gz
+RUN tar -zxvf libssh2.tar.gz
+RUN cd libssh2-1.9.0 && ./configure && make && make install
 
-# Certs for aria2 https websocket
-RUN mkdir -p /home/caligo/.cache/caligo/.certs
+# Install mkcert
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Initialize mkcert
-RUN curl -LJO https://github.com/FiloSottile/mkcert/releases/download/v1.4.3/mkcert-v1.4.3-linux-amd64
-RUN mv mkcert-v1.4.3-linux-amd64 /usr/local/bin/mkcert
-RUN chmod +x /usr/local/bin/mkcert
-
-RUN mkcert -install
-RUN mkcert -key-file /home/caligo/.cache/caligo/.certs/key.pem -cert-file /home/caligo/.cache/caligo/.certs/cert.pem localhost 127.0.0.1
-
-# Change permission of home folder
-RUN chown -hR caligo /home/caligo
-
-# Set runtime settings
-USER caligo
-WORKDIR /home/caligo
-CMD ["bash", "bot"]
+RUN curl -L https://github.com/FiloSottile/mkcert/releases/download/v1.4.2/mkcert-v1.4.2-linux-amd64 -o mkcert
+RUN chmod +x mkcert
+RUN mv mkcert /usr/local/bin
