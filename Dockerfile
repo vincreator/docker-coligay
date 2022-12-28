@@ -1,5 +1,12 @@
 FROM ubuntu:20.04
 
+# Set time zone to your local time zone
+ENV TZ=Asia/Jakarta
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Set debconf to use noninteractive frontend
+ENV DEBIAN_FRONTEND noninteractive
+
 # Install Golang and dependencies
 RUN apt-get update && apt-get install -y \
     git \
