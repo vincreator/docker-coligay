@@ -43,7 +43,6 @@ RUN pip install --upgrade pip
 RUN pip install wheel
 RUN pip install aiohttp[speedups]
 RUN pip install uvloop
-RUN pip install .
 
 # Package everything
 FROM python:3.9-slim-buster AS final
