@@ -41,7 +41,7 @@ RUN apt-get update && apt-get install -y \
 
 # Install native dependencies
 RUN apt-get update && apt-get install -y \
-    libffi6 \
+    libffi7 \
     libssl1.1 \
     libtiff5 \
     libfreetype6 \
