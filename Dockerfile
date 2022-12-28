@@ -7,14 +7,16 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 # Set debconf to use noninteractive frontend
 ENV DEBIAN_FRONTEND noninteractive
 
-# Build Go programs (only corrupter at the moment)
-FROM ubuntu:20.04 AS go-build
-# Download and install Go
-RUN apt-get update && apt-get install -y curl build-essential
-RUN curl -LJO https://golang.org/dl/go1.16.2.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzf go1.16.2.linux-amd64.tar.gz
-ENV PATH="/usr/local/go/bin:$PATH"
+# Install Git and other dependencies needed to build Go programs
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    git \
+    golang-go
 
+# Clone the repository and build the corrupter binary
+RUN git clone https://github.com/r00tman/corrupter /go/src/corrupter
+WORKDIR /go/src/corrupter
+RUN go build -o /usr/local/bin/corrupter .
 
 # Build Python package and dependencies
 FROM python:3.9-slim-buster AS python-build
