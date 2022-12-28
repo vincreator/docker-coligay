@@ -13,11 +13,6 @@ RUN apt-get update && apt-get install -y \
     git \
     golang-go
 
-# Clone the repository and build the corrupter binary
-RUN git clone https://github.com/r00tman/corrupter /go/src/corrupter
-WORKDIR /go/src/corrupter
-RUN go build -o /usr/local/bin/corrupter .
-
 # Build Python package and dependencies
 FROM python:3.9-slim-buster AS python-build
 RUN apt-get update && apt-get install -y \
@@ -82,9 +77,6 @@ RUN apt-get update && apt-get install -y \
 
 # Create bot user
 RUN adduser -D caligo
-
-# Copy Go programs
-COPY --from=go-build /go/bin/corrupter /usr/local/bin
 
 # Copy Python venv
 ENV PATH="/opt/venv/bin:$PATH"
